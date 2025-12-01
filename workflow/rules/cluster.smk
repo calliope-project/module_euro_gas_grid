@@ -1,14 +1,13 @@
 rule cluster_gas_network:
     message: "Clustering and sectioning exisiting gas grid network for {wildcards.shapes} resolution"
     input:
-        scigrid = rules.unzip_pipe_segements.output.pipelines,
-        offshore_grid = "resources/automatic/gas_grid.zip",
+        scigrid = rules.prepare_pipelines.output.pipelines,
         regions = "resources/user/{shapes}/shapes.geojson",
     output:
         clusters="results/{shapes}/pipe_clusters.geojson",
     log:
         "logs/{shapes}/cluster_gas_network.log"
-    conda: "../envs/clustering.yaml"
+    conda: "../envs/euro_gas_grid.yaml"
     script: "../scripts/gas_network_clustering.py"
 
 
@@ -24,3 +23,8 @@ rule cluster_salt_cavern_potentials:
     conda: "../envs/clustering.yaml"
     script: "../scripts/salt_cavern.py"
 
+# rule cluster_existing_gas_network:
+#     message: "Clustering existing gas network within {wildcards.shapes} resolution."
+#     input:
+#         pipelines = rules.prepare_pipelines.output.pipelines,
+#         shapes = rules.
