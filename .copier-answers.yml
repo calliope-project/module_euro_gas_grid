@@ -1,0 +1,12 @@
+# Changes here will be overwritten by Copier
+# DO NOT MANUALLY MODIFY THIS FILE
+_commit: latest
+_src_path: https://github.com/calliope-project/data-module-template.git
+author_email: i.ruizmanuel@tudelft.nl
+author_family_name: Ruiz Manuel
+author_given_name: Ivan
+github_org: calliope-project
+license: Apache-2.0
+module_description: A module to disaggregate gas networks for European countries.
+module_long_name: Module Euro Gas Grid
+module_short_name: module_euro_gas_grid

@@ -1,0 +1,25 @@
+[project]
+name = "module_euro_gas_grid"
+authors = ["See AUTHORS file"]
+description = "A module to disaggregate gas networks for European countries."
+license = "Apache-2.0"
+readme = "README.md"
+channels = ["conda-forge", "bioconda"]
+platforms = ["win-64", "linux-64", "osx-arm64"]
+homepage = "https://clio.readthedocs.io/"
+
+[dependencies]
+clio-tools = ">=2025.03.03"
+conda = ">=25.0.0"
+ipdb = ">=0.13.13"
+ipykernel = ">=6.29.5"
+jsonschema = ">=4.0.0"
+mypy = ">=1.15.0"
+pytest = ">=8.3.5"
+python = ">=3.12"
+ruff = ">=0.9.9"
+snakefmt = ">=0.10.2"
+snakemake-minimal = ">=8.29.0"
+
+[tasks]
+test-integration = {cmd = "pytest tests/clio_test.py"}
