@@ -1,2 +1,9 @@
-# A minimal example of how to configure this module
-dummy_text: This is a user input.
+# A minimal example of how to configure thi
+resolution: national #national, e_highways
+
+plots:
+  facecolor: 'white'
+  edgecolor: "#c2c2c0"
+  linewidth: 0.5
+  cmap: winter_r
+

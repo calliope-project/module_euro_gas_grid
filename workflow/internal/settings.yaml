@@ -2,4 +2,5 @@
 resources:
   automatic:
     # Links for automatically downloaded files
-    dummy_readme: "https://raw.githubusercontent.com/calliope-project/clio/refs/heads/main/README.md"
+    SciGRID_gas: https://zenodo.org/records/4767098/files/IGGIELGN.zip
+    spatial_units: https://www.dropbox.com/scl/fi/sjjisuqnzck2mhxs9jca7/units-national.geojson?rlkey=rv0q1exsytxws3gfvankbt9p7&e=2&dl=0

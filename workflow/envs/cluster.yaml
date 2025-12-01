@@ -1,0 +1,9 @@
+name: network-clustering
+channels:
+    - conda-forge
+    - nodefaults
+dependencies:
+    - geopandas = 1.0.1
+    - pandas = 1.5.3
+    - shapely = 2.0.4
+    - numpy

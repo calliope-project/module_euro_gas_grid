@@ -1,16 +1,24 @@
 """Rules to used to download automatic resource files."""
 
-
-rule dummy_download:
+rule user_input_shapes:
     message:
-        "Download the clio README file."
+        "Download spatial zones."
     params:
-        url=internal["resources"]["automatic"]["dummy_readme"],
+        url=internal["resources"]["automatic"]["spatial_units"],
     output:
-        readme="resources/automatic/dummy_readme.md",
-    log:
-        "logs/dummy_download.log",
+        "resources/user/shapes_national.geojson",
     conda:
         "../envs/shell.yaml"
+    localrule: True
     shell:
-        'curl -sSLo {output.readme} "{params.url}"'
+        "curl -sSLo {output} '{params.url}'"
+
+rule download_sci_grid_data:
+    message: "Download gas infrastructure data from SciGRID_gas IGGIELGN"
+    params:
+        url = internal["resources"]["automatic"]["SciGRID_gas"]
+    output: "resources/automatic/gas_grid.zip"
+    conda: "../envs/shell.yaml"
+    shell:
+        """curl -sSLo {output} {params.url}"""
+

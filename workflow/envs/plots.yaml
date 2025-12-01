@@ -1,0 +1,9 @@
+name: plots
+channels:
+    - conda-forge
+    - nodefaults
+dependencies:
+    - geopandas = 1.0.1
+    - pandas = 1.5.3
+    - matplotlib = 3.8.2
+
