@@ -30,15 +30,29 @@ def _build_country_translator(pipes: pd.Series) -> dict[str, str]:
         for k in scigrid_countries
         if k != "XX"
     }
-    converter["XX"] = coco.convert("Kosovo", to="iso3")
+    converter["XX"] = "XXX"
     return converter
 
 
-def plot(validated_file: str, output_file: str):
-    """Generate a plot of the pipeline file after validation."""
-    gdf = gpd.read_parquet(validated_file)
+def plot(pipes_file: str, output_file: str):
+    """Plot pipelines, identifying 'unknown' segments."""
+    pipes = gpd.read_parquet(pipes_file)
+    # Unknown in either endpoint
+    offshore = pipes["start_country_id"].str.contains("XXX", na=False) | pipes[
+        "end_country_id"
+    ].str.contains("XXX", na=False)
+
+    gdf_off = pipes[offshore]
+    gdf_land = pipes[~offshore]
+
     fig, ax = plt.subplots(figsize=(6, 6), layout="constrained")
-    gdf.plot(ax=ax, color="tab:blue")
+
+    # Land first, then 'unknown' on top
+    if not gdf_land.empty:
+        gdf_land.plot(ax=ax, color="tab:brown", linewidth=0.6)
+    if not gdf_off.empty:
+        gdf_off.plot(ax=ax, color="tab:blue", linewidth=1.0)
+
     ax.set_title("SciGrid gas pipelines")
     ax.set_xlabel("longitude")
     ax.set_ylabel("latitude")

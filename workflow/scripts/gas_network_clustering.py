@@ -3,61 +3,25 @@
 TODO: should keep incomming connections too!
 """
 
-import json
 import sys
 from typing import TYPE_CHECKING, Any
 
 import geopandas as gpd
 import pandas as pd
-from shapely.geometry import LineString, Point
+from shapely.geometry import LineString
 
 if TYPE_CHECKING:
     snakemake: Any
 sys.stderr = open(snakemake.log[0], "w")
 
-NG_DENSITY = 0.68  # kg/Sm3
-NG_ENERGY_CONTENT = 55  # MJ/kg
+# Density at normal temperature and pressure (closer to operating conditions than STP)
+# https://www.engineeringtoolbox.com/gas-density-d_158.html
+CH4_KG_M3 = 0.668
+# Typical values for natural gas (CH4)
+# https://ocw.tudelft.nl/wp-content/uploads/Summary_table_with_heating_values_and_CO2_emissions.pdf
+CH4_HHV_MJ_PER_KG = 55
 MAXIMUM_THEORETICAL_H2_SHARE = 0.88  # 88% of original capacity
 
-
-def read_clean_scigrid(file_path):
-    # File inside the zip that you want to extract and read
-    gas_pipelines = gpd.read_file(file_path)
-
-    param_cols = [
-        "diameter_mm",
-        "max_cap_M_m3_per_d",
-        "is_bothDirection",
-        "length_km",
-        "max_pressure_bar",
-    ]
-    param = gas_pipelines.param.apply(json.loads).apply(pd.Series)[param_cols]
-
-    method_cols = {
-        "diameter_mm": "diameter_method",
-        "max_cap_M_m3_per_d": "max_cap_method",
-    }
-
-    method = (
-        gas_pipelines.method.apply(json.loads)
-        .apply(pd.Series)[[*method_cols]]
-        .rename(columns=method_cols)
-    )
-
-    gas_pipelines = pd.concat([gas_pipelines, param, method], axis=1)
-
-    to_drop = ["param", "method", "tags"]
-    to_drop = gas_pipelines.columns.intersection(to_drop)
-    gas_pipelines.drop(to_drop, axis=1, inplace=True)
-
-    gas_pipelines["start_point"] = gas_pipelines.geometry.apply(
-        lambda x: Point(x.coords[0])
-    )
-    gas_pipelines["end_point"] = gas_pipelines.geometry.apply(
-        lambda x: Point(x.coords[-1])
-    )
-
-    return gas_pipelines
 
 
 def connection_mapping(geometry, connection_regions):
@@ -84,7 +48,7 @@ def read_and_concat_offshore_pipes(offshore_path, onshore_df):
 
 
 def cluster_onshore_pipes(grid_path, connection_path):
-    gas_pipelines = read_clean_scigrid(grid_path)
+    gas_pipelines = gpd.read_parquet(grid_path)
     connection_regions = gpd.read_file(connection_path)
 
     # startpoint and endpoint mapping
@@ -159,8 +123,8 @@ def estimate_capacity(row):
     if row.max_cap_method in ["raw", "Median"]:
         capacity = (
             row.max_cap_M_m3_per_d
-            * NG_DENSITY
-            * NG_ENERGY_CONTENT
+            * CH4_KG_M3
+            * CH4_HHV_MJ_PER_KG
             * 24
             * 1000
             * MAXIMUM_THEORETICAL_H2_SHARE
@@ -262,5 +226,5 @@ if __name__ == "__main__":
     create_sections_clustered_gas_pipes(
         pipes_file=snakemake.input.scigrid,
         shapes_file=snakemake.input.regions,
-        output_file=snakemake.output.cluster,
+        output_file=snakemake.output.clusters,
     )
