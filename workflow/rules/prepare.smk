@@ -22,7 +22,8 @@ rule prepare_pipelines:
     message:
         "Validating SciGRID data."
     input:
-        raw=rules.unzip_pipe_segements.output.pipelines,
+        raw_pipelines=rules.unzip_pipe_segements.output.pipelines,
+        landmass=rules.prepare_landmass.output.landmass
     output:
         pipelines="resources/automatic/pipelines.parquet",
         fig="resources/automatic/pipelines.png"

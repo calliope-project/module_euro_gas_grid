@@ -42,5 +42,7 @@ class PipelineSchema(pa.DataFrameModel):
     "Max pressure (used for sectioning)."
     is_bothDirection: Series[bool]
     "Pipeline direction."
+    is_offshore: Series[bool]
+    "Flag offshore pipelines (outside of country landmass)."
     geometry: GeoSeries
     "Lines."

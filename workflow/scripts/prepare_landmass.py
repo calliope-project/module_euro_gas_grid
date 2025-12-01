@@ -22,7 +22,6 @@ def plot(land_file: str, output_file: str):
     ax.set_title("Natural Earth landmass")
     ax.set_xlabel("longitude")
     ax.set_ylabel("latitude")
-    fig.ti
     fig.savefig(output_file, dpi=300)
 
 
