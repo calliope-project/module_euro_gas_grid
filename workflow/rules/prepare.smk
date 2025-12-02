@@ -23,12 +23,14 @@ rule prepare_pipelines:
         "Validating SciGRID data."
     params:
         projected_crs=config["crs"]["projected"],
+        imputation=config["imputation"],
     input:
         raw_pipelines=rules.unzip_pipe_segements.output.pipelines,
         landmass=rules.prepare_landmass.output.landmass
     output:
         pipelines="resources/automatic/pipelines.parquet",
-        fig="resources/automatic/pipelines.png"
+        fig_offshore="resources/automatic/pipelines_offshore.png",
+        fig_ch4_capacity="resources/automatic/pipelines_ch4_capacity.png"
     log:
         "logs/prepare_pipelines.log",
     conda:

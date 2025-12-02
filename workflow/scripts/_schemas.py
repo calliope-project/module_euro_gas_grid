@@ -25,12 +25,12 @@ class PipelineSchema(pa.DataFrameModel):
 
     name: Series[str]
     "Pipeline name."
-    start_point: GeoSeries
-    "Pipeline start point."
+    # start_point: GeoSeries
+    # "Pipeline start point."
     start_country_id: Series[str] = pa.Field(str_matches=ISO3_RE)
     "ISO 3 code of the country in the start point."
-    end_point: GeoSeries
-    "Pipeline end point."
+    # end_point: GeoSeries
+    # "Pipeline end point."
     end_country_id: Series[str] = pa.Field(str_matches=ISO3_RE)
     "ISO 3 code of the country in the start point."
     diameter_mm: Series[float]
@@ -45,6 +45,8 @@ class PipelineSchema(pa.DataFrameModel):
     "Max pressure (used for sectioning)."
     is_bothDirection: Series[bool]
     "Pipeline direction."
+    ch4_capacity_mw: Series[float]
+    "CH4 pipeline capacity in MW (nominal)."
     is_offshore: Series[bool]
     "Flag offshore pipelines (outside of country landmass)."
     geometry: GeoSeries

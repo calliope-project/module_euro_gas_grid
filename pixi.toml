@@ -26,6 +26,7 @@ country_converter = ">=1.3.2,<2"
 pandera-geopandas = ">=0.24.0,<0.25"
 pycountry = ">=24.6.1,<25"
 matplotlib = ">=3.10.8,<4"
+cmap = ">=0.6.2,<0.7"
 
 [tasks]
 test-integration = {cmd = "pytest tests/clio_test.py"}

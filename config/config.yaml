@@ -4,6 +4,11 @@ resolution: national #national, e_highways
 crs:
   projected: "EPSG:3857"
 
+imputation:
+  inferred_mm: 500
+  recalculate_below_mw: 500
+  ch4_to_h2_ratio: 0.8
+
 plots:
   facecolor: 'white'
   edgecolor: "#c2c2c0"

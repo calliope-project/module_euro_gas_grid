@@ -19,7 +19,7 @@ sys.stderr = open(snakemake.log[0], "w")
 CH4_KG_M3 = 0.668
 # Typical values for natural gas (CH4)
 # https://ocw.tudelft.nl/wp-content/uploads/Summary_table_with_heating_values_and_CO2_emissions.pdf
-CH4_HHV_MJ_PER_KG = 55
+CH4_LHV_MJ_PER_KG = 50
 MAXIMUM_THEORETICAL_H2_SHARE = 0.88  # 88% of original capacity
 
 
@@ -124,7 +124,7 @@ def estimate_capacity(row):
         capacity = (
             row.max_cap_M_m3_per_d
             * CH4_KG_M3
-            * CH4_HHV_MJ_PER_KG
+            * CH4_LHV_MJ_PER_KG
             * 24
             * 1000
             * MAXIMUM_THEORETICAL_H2_SHARE
