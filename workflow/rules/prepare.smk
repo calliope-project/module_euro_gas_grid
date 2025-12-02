@@ -5,7 +5,7 @@ rule prepare_landmass:
     message:
         "Preparing landmass data."
     input:
-        raw_folder=rules.unzip_landmass.output.folder,
+        raw_folder="resources/automatic/landmass/",
     output:
         landmass="resources/automatic/landmass.parquet",
         fig="resources/automatic/landmass.png"
@@ -15,6 +15,22 @@ rule prepare_landmass:
         "../envs/euro_gas_grid.yaml"
     script:
         "../scripts/prepare_landmass.py"
+
+rule prepare_countries:
+    message:
+        "Preparing country data."
+    input:
+        raw_folder="resources/automatic/countries/",
+        raw_pipelines=rules.unzip_pipe_segements.output.pipelines,
+    output:
+        countries="resources/automatic/countries.parquet",
+        fig="resources/automatic/countries.png"
+    log:
+        "logs/prepare_countries.log",
+    conda:
+        "../envs/euro_gas_grid.yaml"
+    script:
+        "../scripts/prepare_countries.py"
 
 
 

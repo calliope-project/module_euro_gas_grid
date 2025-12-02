@@ -1,5 +1,9 @@
 """Rules to used to download automatic resource files."""
 
+wildcard_constraints:
+    nat_earth="|".join(["landmass", "countries"])
+
+
 rule download_sci_grid:
     message:
         "Downloading gas infrastructure data from SciGRID_gas IGGIELGN."
@@ -15,20 +19,6 @@ rule download_sci_grid:
     shell:
         """curl -sSLo {output} {params.url}"""
 
-rule download_landmass:
-    message:
-        "Downloading landmass from Natural Earth data (10m)."
-    params:
-        url = internal["resources"]["automatic"]["landmass"]
-    log:
-        "logs/download_landmass.log",
-    output:
-        zipfile=temp("resources/automatic/landmass.zip"),
-    localrule: True,
-    conda:
-        "../envs/shell.yaml"
-    shell:
-        """curl -sSLo {output} {params.url}"""
 
 rule unzip_pipe_segements:
     message:
@@ -46,15 +36,32 @@ rule unzip_pipe_segements:
     script:
         "../scripts/unzip.py"
 
-rule unzip_landmass:
+
+rule download_natural_earth:
     message:
-        "Unzipping landmass file."
-    input:
-        zip_file=rules.download_landmass.output.zipfile,
-    output:
-        folder=temp(directory("resources/automatic/landmass/")),
+        "Downloading '{wildcards.nat_earth}' from Natural Earth data (10m)."
+    params:
+        url = lambda wc: internal["resources"]["automatic"]["natural_earth"][wc.nat_earth]
     log:
-        "logs/automatic/unzip_landmass.log",
+        "logs/download_{nat_earth}.log",
+    output:
+        zipfile=temp("resources/automatic/{nat_earth}.zip"),
+    localrule: True,
+    conda:
+        "../envs/shell.yaml"
+    shell:
+        """curl -sSLo {output} {params.url}"""
+
+
+rule unzip_natural_earth:
+    message:
+        "Unzipping natural earth '{wildcards.nat_earth}' data."
+    input:
+        zip_file=rules.download_natural_earth.output.zipfile,
+    output:
+        folder=directory("resources/automatic/{nat_earth}/"),
+    log:
+        "logs/automatic/unzip_natural_earth_{nat_earth}.log",
     conda:
         "../envs/clustering.yaml"
     script:

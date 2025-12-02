@@ -1,4 +1,4 @@
-"""Filter SciGrid pipelines to fit our data standards."""
+"""Prepare Natural Earth landmass."""
 
 import sys
 from pathlib import Path

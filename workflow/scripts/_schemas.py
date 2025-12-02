@@ -18,6 +18,25 @@ class LandSchema(pa.DataFrameModel):
     "Land polygons."
 
 
+class CountriesSchema(pa.DataFrameModel):
+    class Config:
+        coerce = True
+        strict = "filter"
+
+    sovereign_id: Series[str] = pa.Field(str_length=3)
+    "ISO3-like code of sovereign body."
+    sovereign_name: Series[str]
+    "Name of the sovereign body."
+    sovereign_type: Series[str]
+    "Type of sovereign body."
+    admin_name: Series[str]
+    "Name of the administrative body."
+    admin_id: Series[str] = pa.Field(str_matches=ISO3_RE)
+    "ISO3 code of administrative body."
+    geometry: GeoSeries
+    "Landmass polygon of soberign body."
+
+
 class PipelineSchema(pa.DataFrameModel):
     class Config:
         coerce = True
