@@ -195,35 +195,51 @@ def estimate_ch4_capacity(
         gpd.GeoDataFrame: pipeline dataframe with CH4 capacity.
     """
     pipes = pipes.copy()
+
     conversion_factor = 1e6 * CH4_KG_M3 * CH4_HHV_MJ_PER_KG / (24 * 60 * 60)
+
+    # Base estimate: convert reported capacity (million m3 / day) to MW
     pipes["ch4_capacity_mw"] = pipes["max_cap_M_m3_per_d"] * conversion_factor
 
-    # Handle inferred diameters
+    # Optionally override inferred diameters
     inferred_mask = pipes["diameter_method"].ne("raw")
     if inferred_mm is not None:
         pipes.loc[inferred_mask, "diameter_mm"] = inferred_mm
         pipes.loc[inferred_mask, "diameter_method"] = "Module recalculation"
 
-    capacity_mw_diameter_based = pipes["diameter_mm"].apply(_diameter_to_capacity)
+    # Alternative estimate
+    cap_diam_mw = pipes["diameter_mm"].apply(_diameter_to_capacity)
+
     # Nordstream pressure ranges from 170-220
     # https://en.wikipedia.org/wiki/Nord_Stream_1#Baltic_Sea_offshore_pipeline
     not_nordstream = pipes["max_pressure_bar"] < 170
-    ratio = pipes["ch4_capacity_mw"] / capacity_mw_diameter_based
+    ratio = pipes["ch4_capacity_mw"] / cap_diam_mw
     discrepant_mask = not_nordstream & (
         (ratio > capacity_correction_threshold)
         | (ratio < 1 / capacity_correction_threshold)
     )
 
-    low_mask = False
+    # Optional: force recalculation below a threshold
+    low_mask = pd.Series(False, index=pipes.index)
     if recalculate_below_mw is not None:
         low_mask = pipes["ch4_capacity_mw"] <= recalculate_below_mw
 
-    # Replace with diameter based capacity
+    # Apply corrections
     correction_mask = discrepant_mask | low_mask
-    pipes.loc[correction_mask, "ch4_capacity_mw"] = capacity_mw_diameter_based.loc[
-        correction_mask
-    ]
-    pipes.loc[correction_mask, "max_cap_method"] = "Module recalculation"
+    pipes.loc[correction_mask, "ch4_capacity_mw"] = cap_diam_mw.loc[correction_mask]
+
+    # Track method provenance
+    pipes["ch4_capacity_method"] = "conversion factor based"
+    pipes.loc[correction_mask, "ch4_capacity_method"] = "diameter based"
+    pipes.loc[discrepant_mask & ~low_mask, "ch4_capacity_method"] = (
+        "diameter based (ratio discrepancy)"
+    )
+    pipes.loc[low_mask & ~discrepant_mask, "ch4_capacity_method"] = (
+        "diameter based (below threshold)"
+    )
+    pipes.loc[low_mask & discrepant_mask, "ch4_capacity_method"] = (
+        "diameter based (ratio discrepancy+below threshold)"
+    )
 
     return pipes
 
