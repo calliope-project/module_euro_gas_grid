@@ -2,7 +2,7 @@
 resources:
   automatic:
     # Links for automatically downloaded files
-    scigrid_gas: https://zenodo.org/records/4767098/files/IGGIELGN.zip
+    scigrid_gas: https://zenodo.org/records/5079748/files/IGGIELGNC.zip
     spatial_units: https://www.dropbox.com/scl/fi/sjjisuqnzck2mhxs9jca7/units-national.geojson?rlkey=rv0q1exsytxws3gfvankbt9p7&e=2&dl=0
     natural_earth:
       landmass: "https://naciscdn.org/naturalearth/10m/physical/ne_10m_land.zip"

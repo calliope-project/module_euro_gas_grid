@@ -24,7 +24,7 @@ rule unzip_pipe_segements:
     message:
         "Unzipping SciGrid '{params.file}'."
     params:
-        file=f"data/IGGIELGN_PipeSegments.geojson",
+        file=f"data/IGGIELGNC3_PipeSegments.geojson",
     input:
         zip_file=rules.download_sci_grid.output.zipfile,
     output:
