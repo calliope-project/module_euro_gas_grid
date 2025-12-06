@@ -29,22 +29,22 @@
 #         pipelines = rules.prepare_pipelines.output.pipelines,
 #         shapes = rules.
 
-rule cluster_and_snap_pipelines:
-    message:
-        "Clustering and snapping pipelines to nodes."
-    params:
-        buffer = config["imputation"]["buffer_distance"],
-        projected_crs = config["crs"]["projected"],
-    input:
-        pipelines=rules.prepare_pipelines.output.pipelines,
-        countries=rules.prepare_countries.output.countries,
-    output:
-        pipelines="resources/automatic/clustered/pipelines.parquet",
-        nodes="resources/automatic/clustered/nodes.parquet",
-        fig="resources/automatic/clustered/pipes_and_nodes.png"
-    log:
-        "logs/cluster_and_snap_pipelines.log",
-    conda:
-        "../envs/euro_gas_grid.yaml"
-    script:
-        "../scripts/cluster_and_snap_pipelines.py"
+# rule cluster_and_snap_pipelines:
+#     message:
+#         "Clustering and snapping pipelines to nodes."
+#     params:
+#         buffer = config["imputation"]["buffer_distance"],
+#         projected_crs = config["crs"]["projected"],
+#     input:
+#         pipelines=rules.prepare_pipelines.output.pipelines,
+#         countries=rules.prepare_countries.output.countries,
+#     output:
+#         pipelines="resources/automatic/clustered/pipelines.parquet",
+#         nodes="resources/automatic/clustered/nodes.parquet",
+#         fig="resources/automatic/clustered/pipes_and_nodes.png"
+#     log:
+#         "logs/cluster_and_snap_pipelines.log",
+#     conda:
+#         "../envs/euro_gas_grid.yaml"
+#     script:
+#         "../scripts/cluster_and_snap_pipelines.py"

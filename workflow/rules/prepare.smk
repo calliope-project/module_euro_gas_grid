@@ -37,14 +37,15 @@ rule prepare_pipelines:
     message:
         "Harmonising SciGRID data."
     params:
-        projected_crs=config["crs"]["projected"],
         imputation=config["imputation"],
     input:
-        raw_pipelines=rules.unzip_pipe_segements.output.pipelines,
+        raw_pipelines="resources/automatic/scigrid_gas/PipeSegments.geojson",
+        raw_nodes="resources/automatic/scigrid_gas/Nodes.geojson",
         landmass=rules.prepare_landmass.output.landmass,
         countries=rules.prepare_countries.output.countries
     output:
         pipelines="resources/automatic/pipelines.parquet",
+        nodes="resources/automatic/nodes.parquet",
         fig="resources/automatic/pipelines.png",
     log:
         "logs/prepare_pipelines.log",

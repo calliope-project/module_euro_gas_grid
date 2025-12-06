@@ -64,7 +64,7 @@ class PipelineSchema(pa.DataFrameModel):
     "Max capacity metadata (used to select formulae)."
     max_pressure_bar: Series[float] = pa.Field(gt=0)
     "Max pressure (used for sectioning)."
-    is_bothDirection: Series[bool]
+    is_bidirectional: Series[bool]
     "Pipeline direction."
     ch4_capacity_mw: Series[float] = pa.Field(gt=0)
     "CH4 pipeline capacity in MW (nominal)."
@@ -94,10 +94,12 @@ class NodeSchema(pa.DataFrameModel):
     "Directed graph inputs."
     out_degree: Series[int] = pa.Field(ge=0)
     "Directed graph outputs."
-    e_type: Series[str] = pa.Field(
+    etype: Series[str] = pa.Field(
         isin=["source", "sink", "terminal", "connection", "junction"]
     )
     """Type of element."""
+    country_id: Series[str] = pa.Field(str_length=3)
+    "Country identifier (ISO3 in most cases)."
     geometry: GeoSeries
     "Must be points."
 

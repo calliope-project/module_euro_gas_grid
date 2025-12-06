@@ -6,7 +6,7 @@ crs:
 
 imputation:
   remove_nordstream: True
-  buffer_distance: 500
+  buffer_distance: 100
   inferred_mm: 500
   recalculate_below_mw: 500
   ch4_to_h2_ratio: 0.8

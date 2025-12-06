@@ -1,8 +1,8 @@
 """Rules to used to download automatic resource files."""
 
 wildcard_constraints:
-    nat_earth="|".join(["landmass", "countries"])
-
+    nat_earth="|".join(["landmass", "countries"]),
+    scigrid_gas="|".join(["BorderPoints", "Compressors", "Consumers", "LNGs", "Nodes", "PipeSegments", "PowerPlants", "Productions", "Storages"])
 
 rule download_sci_grid:
     message:
@@ -20,17 +20,17 @@ rule download_sci_grid:
         """curl -sSLo {output} {params.url}"""
 
 
-rule unzip_pipe_segements:
+rule unzip_scigrid_dataset:
     message:
-        "Unzipping SciGrid '{params.file}'."
+        "Unzipping SciGrid '{wildcards.scigrid_gas}'."
     params:
-        file=f"data/IGGIELGNC3_PipeSegments.geojson",
+        file=lambda wc: f"data/IGGIELGNC3_{wc.scigrid_gas}.geojson",
     input:
         zip_file=rules.download_sci_grid.output.zipfile,
     output:
-        pipelines="resources/automatic/pipesegments.geojson",
+        pipelines="resources/automatic/scigrid_gas/{scigrid_gas}.geojson",
     log:
-        "logs/automatic/unzip_pipe_segements.log",
+        "logs/automatic/unzip_scigrid_dataset_{scigrid_gas}.log",
     conda:
         "../envs/clustering.yaml"
     script:
@@ -51,6 +51,7 @@ rule download_natural_earth:
         "../envs/shell.yaml"
     shell:
         """curl -sSLo {output} {params.url}"""
+
 
 # TODO: output should be the file, not a directory.
 rule unzip_natural_earth:

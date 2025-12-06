@@ -1,9 +1,7 @@
-"""A simple script to 'snap' pipelines to the nearest node.
-
-SciGRID_gas does not provide IDs to link these, so we use a small buffer.
-"""
+"""Snap pipeline endpoints to nearest nodes and derive node graph metrics."""
 
 import _schemas
+import _utils
 import country_converter as coco
 import geopandas as gpd
 import numpy as np
@@ -11,43 +9,35 @@ import pandas as pd
 from shapely.geometry import LineString, Point
 
 
-def snap_pipes_to_nodes(
+def match_pipes_and_nodes(
     pipes: gpd.GeoDataFrame,
     nodes: gpd.GeoDataFrame,
     *,
-    buffer_dist: float = 500.0,
+    buffer_dist: float = 100.0,
     crs: str = "EPSG:3035",
 ):
-    pipes = _schemas.PipelineSchema.validate(pipes)
     nodes = nodes.reset_index(drop=True)
 
-    if pipes.crs != crs:
-        pipes = pipes.to_crs(crs)
-    if nodes.crs != crs:
-        nodes = nodes.to_crs(crs)
+    pipes = _utils.to_crs(pipes, crs)
+    nodes = _utils.to_crs(nodes, crs)
     if not pipes.crs.is_projected:
         raise ValueError(f"Requested crs must be projected. Got {crs!r}.")
 
     nodes["node_id"] = np.arange(len(nodes), dtype=int)
 
-    # endpoints (2 rows per line)
-    endpoints = pd.concat(
-        [
-            gpd.GeoDataFrame(
-                {"pipeline_id": pipes["pipeline_id"], "endpoint": "start"},
-                geometry=pipes.geometry.apply(lambda ls: Point(ls.coords[0])),
-                crs=pipes.crs,
-            ),
-            gpd.GeoDataFrame(
-                {"pipeline_id": pipes["pipeline_id"], "endpoint": "end"},
-                geometry=pipes.geometry.apply(lambda ls: Point(ls.coords[-1])),
-                crs=pipes.crs,
-            ),
-        ],
-        ignore_index=True,
+    # ---- endpoints (2 rows per line)
+    start_pts = pipes.geometry.map(lambda ls: Point(ls.coords[0]))
+    end_pts = pipes.geometry.map(lambda ls: Point(ls.coords[-1]))
+
+    endpoints = gpd.GeoDataFrame(
+        {
+            "pipeline_id": pd.Index(pipes["pipeline_id"]).repeat(2).to_numpy(),
+            "endpoint": np.tile(["start", "end"], len(pipes)),
+        },
+        geometry=pd.concat([start_pts, end_pts], ignore_index=True),
+        crs=pipes.crs,
     )
 
-    # Nearest point within buffer
     matched = gpd.sjoin_nearest(
         endpoints,
         nodes[["node_id", "geometry"]],
@@ -56,82 +46,67 @@ def snap_pipes_to_nodes(
         distance_col="snap_dist",
     )
 
-    # fail fast if anything didn't match
-    missing_mask = matched["node_id"].isna()
-    if missing_mask.any():
-        bad = matched.loc[missing_mask, ["pipeline_id", "endpoint"]]
+    if matched["node_id"].isna().any():
+        bad = matched.loc[matched["node_id"].isna(), ["pipeline_id", "endpoint"]]
         raise RuntimeError(
             f"Unmatched line endpoints within {buffer_dist} units:\n{bad.to_string(index=False)}"
         )
 
-    for i in ["start", "end"]:
-        ids = matched.loc[matched["endpoint"] == i].set_index("pipeline_id")["node_id"]
-        pipes[f"{i}_node_id"] = pipes["pipeline_id"].map(ids).astype(int)
+    # Pipeline -> (start_node_id, end_node_id) in one shot
+    node_map = matched.pivot(index="pipeline_id", columns="endpoint", values="node_id")
+    pipes["start_node_id"] = pipes["pipeline_id"].map(node_map["start"]).astype(int)
+    pipes["end_node_id"] = pipes["pipeline_id"].map(node_map["end"]).astype(int)
 
-    # snap geometries (preserve direction: only replace first/last coord)
-    point_geom = nodes.set_index("node_id").geometry
+    # ---- snap geometries (preserve direction: replace only first/last coord)
+    node_xy = nodes.set_index("node_id").geometry.map(lambda p: p.coords[0])
 
-    def snap_ls(ls: LineString, s_id: int, e_id: int):
+    def _snap(ls: LineString, s_id: int, e_id: int) -> LineString:
         coords = list(ls.coords)
-        coords[0] = tuple(point_geom.loc[s_id].coords[0])  # preserves Z if present
-        coords[-1] = tuple(point_geom.loc[e_id].coords[0])
+        coords[0] = tuple(node_xy.loc[s_id])
+        coords[-1] = tuple(node_xy.loc[e_id])
         return LineString(coords)
 
     pipes["geometry"] = [
-        snap_ls(ls, s_id, e_id)
-        for ls, s_id, e_id in zip(
-            pipes.geometry, pipes.start_node_id, pipes.end_node_id
-        )
+        _snap(ls, s, e)
+        for ls, s, e in zip(pipes.geometry, pipes.start_node_id, pipes.end_node_id)
     ]
 
-    # node coverage check (all nodes used by at least one pipeline endpoint)
-    used = pd.Index(pd.concat([pipes.start_node_id, pipes.end_node_id]).unique())
-    if not nodes["node_id"].isin(used).all():
-        raise RuntimeError("Not all nodes were matched to pipelines.")
+    # ---- graph metrics
+    u = pipes["start_node_id"]
+    v = pipes["end_node_id"]
+    deg = pd.concat([u, v]).value_counts()
 
-    # Graph metrics on nodes
-    degree = pd.concat([pipes.start_node_id, pipes.end_node_id]).value_counts()
-
-    # out_degree:
     both = pipes["is_bothDirection"].astype(bool)
-    out_counts = pd.concat(
+    arcs = pd.concat(
         [
-            pipes.loc[~both, "start_node_id"],
-            pipes.loc[both, "start_node_id"],
-            pipes.loc[both, "end_node_id"],
-        ]
-    ).value_counts()
+            pd.DataFrame({"src": u, "dst": v}),
+            pd.DataFrame({"src": v.loc[both], "dst": u.loc[both]}),
+        ],
+        ignore_index=True,
+    )
+    out_deg = arcs["src"].value_counts()
+    in_deg = arcs["dst"].value_counts()
 
-    # in_degree:
-    in_counts = pd.concat(
-        [
-            pipes.loc[~both, "end_node_id"],
-            pipes.loc[both, "start_node_id"],
-            pipes.loc[both, "end_node_id"],
-        ]
-    ).value_counts()
+    nodes["degree"] = nodes["node_id"].map(deg).fillna(0).astype(int)
+    nodes["out_degree"] = nodes["node_id"].map(out_deg).fillna(0).astype(int)
+    nodes["in_degree"] = nodes["node_id"].map(in_deg).fillna(0).astype(int)
 
-    nodes["degree"] = nodes["node_id"].map(degree).fillna(0).astype(int)
-    nodes["out_degree"] = nodes["node_id"].map(out_counts).fillna(0).astype(int)
-    nodes["in_degree"] = nodes["node_id"].map(in_counts).fillna(0).astype(int)
-
-    deg = nodes["degree"]
-    in_deg = nodes["in_degree"]
-    out_deg = nodes["out_degree"]
-
-    isolated = (in_deg == 0) & (out_deg == 0)
-    if isolated.any():
+    if (nodes["degree"] == 0).any():
         raise RuntimeError(
-            f"Isolated node(s): {nodes.loc[isolated, 'node_id'].tolist()}"
+            f"Isolated node(s): {nodes.loc[nodes['degree'] == 0, 'node_id'].tolist()}"
         )
 
-    nodes["node_type"] = np.select(
+    d = nodes["degree"]
+    i = nodes["in_degree"]
+    o = nodes["out_degree"]
+
+    nodes["e_type"] = np.select(
         [
-            (in_deg == 0) & (out_deg > 0),  # source
-            (out_deg == 0) & (in_deg > 0),  # sink
-            (deg == 1) & (in_deg == 1) & (out_deg == 1),  # terminal
-            (deg == 2) & (in_deg == 1) & (out_deg == 1),  # connection (pass through)
-            (in_deg > 0) & (out_deg > 0),  # junction (anything else with both)
+            (i == 0) & (o > 0),  # source
+            (o == 0) & (i > 0),  # sink
+            (d == 1) & (i == 1) & (o == 1),  # terminal (single bidirectional pipe)
+            (d == 2) & (i == 1) & (o == 1),  # connection (pass-through)
+            (i > 0) & (o > 0),  # junction
         ],
         ["source", "sink", "terminal", "connection", "junction"],
         default="__error__",
@@ -155,24 +130,25 @@ def fix_node_country_ids(
     if nodes.crs != countries.crs:
         countries = countries.to_crs(nodes.crs)
 
-    # 1) Translate using coco (trust not_found), with your explicit "XX" special-case
-    uniq = nodes[country_code_col].dropna().unique()
-    tr = {k: coco.convert(k, to="iso3", not_found=np.nan) for k in uniq if k != "XX"}
+    uniq = [c for c in nodes[country_code_col].dropna().unique().tolist() if c != "XX"]
+    converted = coco.convert(uniq, to="iso3", not_found=np.nan)
+    if isinstance(converted, str):  # coco returns scalar for single input sometimes
+        converted = [converted]
+    tr = dict(zip(uniq, converted))
     tr["XX"] = missing
 
     nodes[country_id_col] = nodes[country_code_col].map(tr).fillna(missing)
 
-    # 2) Attempt to spatially fill remaining 'XXX'
     m = nodes[country_id_col].eq(missing)
     if m.any():
-        joined = gpd.sjoin(nodes.loc[m, ["geometry"]], countries, predicate="within", how="inner")
+        joined = gpd.sjoin(
+            nodes.loc[m, ["geometry"]], countries, predicate="within", how="inner"
+        )
 
-        # strict: no border ambiguity
         if joined.index.duplicated(keep=False).any():
             bad = joined.index[joined.index.duplicated(keep=False)].unique().tolist()
             raise RuntimeError(f"Ambiguous country match for node index(es): {bad}")
 
         nodes.loc[joined.index, country_id_col] = joined[id_col].astype(str)
-
 
     return nodes
