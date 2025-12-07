@@ -111,6 +111,9 @@ class NodeSchema(pa.DataFrameModel):
 
 class ShapesSchema(pa.DataFrameModel):
     """Schema for geographic shapes."""
+    class Config:
+        coerce = True
+        strict = "filter"
 
     shape_id: Series[str] = pa.Field(unique=True)
     "A unique identifier for this shape."

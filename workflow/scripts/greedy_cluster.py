@@ -342,7 +342,7 @@ def plot(
             zorder=1,
         )
 
-    _plots.style_map_plot(ax, xlim, ylim, "Summary of snapped pipelines.")
+    _plots.style_map_plot(ax, "Summary of snapped pipelines.", xlim, ylim)
     return fig, ax
 
 

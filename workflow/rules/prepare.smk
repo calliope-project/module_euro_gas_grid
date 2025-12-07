@@ -1,5 +1,20 @@
 """Rules to standardise files."""
 
+rule prepare_shapes:
+    message:
+        "Preparing shapes for the Euro Gas Grid module."
+    input:
+        shapes="resources/user/{shapes}/shapes.parquet",
+        north_sea=rules.download_north_sea.output.zipfile if config["add_north_sea"] else None
+    output:
+        shapes="resources/automatic/{shapes}/shapes.parquet",
+        fig="resources/automatic/{shapes}/shapes.png",
+    log:
+        "logs/{shapes}/prepare_shapes.log"
+    conda:
+        "../envs/euro_gas_grid.yaml"
+    script:
+        "../scripts/prepare_shapes.py"
 
 rule prepare_landmass:
     message:

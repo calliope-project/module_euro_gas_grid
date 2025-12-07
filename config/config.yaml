@@ -4,6 +4,8 @@ resolution: national #national, e_highways
 crs:
   projected: "EPSG:3857"
 
+add_north_sea: True
+
 imputation:
   remove_nordstream: True
   buffer_distance: 100

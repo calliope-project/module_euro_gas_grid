@@ -222,6 +222,8 @@ def match_pipes_to_nodes(
     return pipes, nodes
 
 
+# TODO: improve connection/juntion logic
+# connections with two bi-lateral lines are labeled as junctions
 def compute_node_attributes(
     pipes: gpd.GeoDataFrame, nodes: gpd.GeoDataFrame
 ) -> gpd.GeoDataFrame:
