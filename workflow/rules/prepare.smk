@@ -5,7 +5,7 @@ rule prepare_landmass:
     message:
         "Preparing landmass data."
     input:
-        raw_folder="resources/automatic/landmass/",
+        raw_landmass="resources/automatic/landmass.zip",
     output:
         landmass="resources/automatic/landmass.parquet",
         fig="resources/automatic/landmass.png"
@@ -20,7 +20,7 @@ rule prepare_countries:
     message:
         "Preparing country data."
     input:
-        raw_folder="resources/automatic/countries/",
+        raw_countries="resources/automatic/countries.zip",
     output:
         countries="resources/automatic/countries.parquet",
         fig="resources/automatic/countries.png"

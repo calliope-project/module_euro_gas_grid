@@ -1,9 +1,9 @@
 """Prepare Natural Earth Countries."""
 
 import sys
-from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
+import _plots
 import _schemas
 import country_converter as coco
 import geopandas as gpd
@@ -17,23 +17,19 @@ sys.stderr = open(snakemake.log[0], "w")
 def plot(land_file: str, output_file: str):
     """Plot countries."""
     landmass = gpd.read_parquet(land_file)
-    fig, ax = plt.subplots(layout="constrained")
+    fig, ax = plt.subplots(layout="compressed")
 
     landmass.plot(ax=ax, color="tab:purple")
-    ax.set_title("Natural Earth countries")
-    ax.set_xlabel("longitude")
-    ax.set_ylabel("latitude")
+    _plots.style_map_plot(ax, "Natural Earth countries")
     fig.savefig(output_file, dpi=300)
 
 
-def prepare_countries(raw_countries_dir: str, output_file: str):
+def prepare_countries(raw_file: str, output_file: str):
     """Prepare the countries dataset.
 
     Will only be used to assign import naming if necessary.
     """
-    raw_countries = gpd.read_file(
-        Path(raw_countries_dir) / "ne_10m_admin_0_countries.shp"
-    )
+    raw_countries = gpd.read_file(raw_file)
     countries = gpd.GeoDataFrame(
         {
             "sovereign_id": raw_countries["SOV_A3"],
@@ -51,7 +47,7 @@ def prepare_countries(raw_countries_dir: str, output_file: str):
 
 if __name__ == "__main__":
     prepare_countries(
-        raw_countries_dir=snakemake.input.raw_folder,
+        raw_file=snakemake.input.raw_countries,
         output_file=snakemake.output.countries,
     )
     plot(snakemake.output.countries, snakemake.output.fig)

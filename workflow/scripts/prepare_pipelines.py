@@ -515,7 +515,7 @@ def plot(
     offshore = pipes["is_offshore"]
     pipes.loc[~offshore].plot(ax=ax_ul, color="tab:brown", lw=0.6, label="onshore")
     pipes.loc[offshore].plot(ax=ax_ul, color="tab:blue", lw=1.0, label="offshore")
-    _plots.style_map_plot(ax_ul, xlim, ylim, title)
+    _plots.style_map_plot(ax_ul, title, xlim, ylim)
     ax_ul.legend(loc="upper right")
 
     # ---- UC: capacity + dedicated colorbar axis ----
@@ -526,7 +526,7 @@ def plot(
     countries_view.plot(ax=ax_uc, color="black", alpha=0.05, zorder=-2)
     countries_view.boundary.plot(ax=ax_uc, color="black", lw=0.5, zorder=-1)
     pipes.plot("ch4_capacity_mw", ax=ax_uc, cmap=cmap, norm=norm, lw=0.8)
-    _plots.style_map_plot(ax_uc, xlim, ylim, title)
+    _plots.style_map_plot(ax_uc, title, xlim, ylim)
 
     sm = mpl.cm.ScalarMappable(norm=norm, cmap=cmap)
     sm.set_array([])
@@ -549,7 +549,7 @@ def plot(
         lw=0.5,
         legend=True
     )
-    _plots.style_map_plot(ax_bl, xlim, ylim, title)
+    _plots.style_map_plot(ax_bl, title, xlim, ylim)
 
     # ---- densities ----
     _plots.plot_density(ax_k1, pipes["diameter_mm"], r"Pipeline diameter ($mm$)")

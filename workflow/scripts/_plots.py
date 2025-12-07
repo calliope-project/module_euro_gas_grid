@@ -26,10 +26,14 @@ def plot_density(ax: Axes, values: pd.Series, title: str):
     ax.set_title(title)
 
 
-def style_map_plot(ax: Axes, xlim: tuple, ylim: tuple, title: str):
+def style_map_plot(
+    ax: Axes, title: str, xlim: tuple | None = None, ylim: tuple | None = None
+):
     """Standardise map plots (needs projected CRS)."""
-    ax.set_xlim(*xlim)
-    ax.set_ylim(*ylim)
+    if xlim is not None:
+        ax.set_xlim(*xlim)
+    if ylim is not None:
+        ax.set_ylim(*ylim)
     ax.set_aspect("equal", anchor="C")
     ax.set_title(title)
 

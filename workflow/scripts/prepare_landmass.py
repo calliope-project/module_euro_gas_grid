@@ -1,9 +1,9 @@
 """Prepare Natural Earth landmass."""
 
 import sys
-from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
+import _plots
 import _schemas
 import geopandas as gpd
 from matplotlib import pyplot as plt
@@ -19,15 +19,13 @@ def plot(land_file: str, output_file: str):
     fig, ax = plt.subplots(layout="constrained")
 
     landmass.plot(ax=ax, color="tab:blue")
-    ax.set_title("Natural Earth landmass")
-    ax.set_xlabel("longitude")
-    ax.set_ylabel("latitude")
+    _plots.style_map_plot(ax, "Natural Earth landmass")
     fig.savefig(output_file, dpi=300)
 
 
-def prepare_landmass(raw_dir: str, output_file: str):
+def prepare_landmass(raw_file: str, output_file: str):
     """Prepare the landmass dataset."""
-    land = gpd.read_file(Path(raw_dir) / "ne_10m_land.shp")
+    land = gpd.read_file(raw_file)
     land = land[land["featurecla"] == "Land"]
     land = land.rename({"featurecla": "feature_class"}, axis="columns")
     land = land.reset_index(drop=True)
@@ -36,6 +34,6 @@ def prepare_landmass(raw_dir: str, output_file: str):
 
 if __name__ == "__main__":
     prepare_landmass(
-        raw_dir=snakemake.input.raw_folder, output_file=snakemake.output.landmass
+        raw_file=snakemake.input.raw_landmass, output_file=snakemake.output.landmass
     )
     plot(snakemake.output.landmass, snakemake.output.fig)
