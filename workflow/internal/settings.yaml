@@ -4,6 +4,7 @@ resources:
     # Links for automatically downloaded files
     scigrid_gas: https://zenodo.org/records/5079748/files/IGGIELGNC.zip
     spatial_units: https://www.dropbox.com/scl/fi/sjjisuqnzck2mhxs9jca7/units-national.geojson?rlkey=rv0q1exsytxws3gfvankbt9p7&e=2&dl=0
+    marine_regions: https://geo.vliz.be/geoserver/MarineRegions/wfs
     natural_earth:
       landmass: "https://naciscdn.org/naturalearth/10m/physical/ne_10m_land.zip"
       countries: "https://naciscdn.org/naturalearth/10m/cultural/ne_10m_admin_0_countries.zip"

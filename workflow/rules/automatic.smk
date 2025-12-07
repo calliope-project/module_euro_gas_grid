@@ -10,7 +10,7 @@ rule download_sci_grid:
     params:
         url = internal["resources"]["automatic"]["scigrid_gas"]
     log:
-        "logs/download_sci_grid.log",
+        "logs/automatic/download_sci_grid.log",
     output:
         zipfile="resources/automatic/gas_grid.zip",
     localrule: True,
@@ -43,7 +43,7 @@ rule download_natural_earth:
     params:
         url = lambda wc: internal["resources"]["automatic"]["natural_earth"][wc.nat_earth]
     log:
-        "logs/download_{nat_earth}.log",
+        "logs/automatic/download_{nat_earth}.log",
     output:
         zipfile="resources/automatic/{nat_earth}.zip",
     localrule: True,
@@ -51,6 +51,31 @@ rule download_natural_earth:
         "../envs/shell.yaml"
     shell:
         """curl -sSLo {output} {params.url}"""
+
+
+rule download_north_sea:
+    message:
+        "Downloading North Sea map from the marine regions database."
+    params:
+        url = internal["resources"]["automatic"]["marine_regions"]
+    log:
+        "logs/automatic/download_north_sea.log"
+    output:
+        zipfile="resources/automatic/north_sea_2350.zip",
+    localrule: True,
+    conda:
+        "../envs/shell.yaml"
+    shell:
+        """
+        curl -sSL -G {params.url:q} \
+        --data-urlencode 'service=WFS' \
+        --data-urlencode 'version=2.0.0' \
+        --data-urlencode 'request=GetFeature' \
+        --data-urlencode 'typeNames=iho' \
+        --data-urlencode 'cql_filter=mrgid=2350' \
+        --data-urlencode 'outputFormat=SHAPE-ZIP' \
+        -o {output:q}
+        """
 
 
 # TODO: output should be the file, not a directory.
