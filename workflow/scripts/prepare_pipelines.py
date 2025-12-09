@@ -258,11 +258,11 @@ def compute_node_attributes(
 
     nodes["etype"] = np.select(
         [
-            (i == 0) & (o > 0),  # source
-            (o == 0) & (i > 0),  # sink
-            (d == 1) & (i == 1) & (o == 1),  # terminal (single bidirectional pipe)
-            (d == 2) & (i == 1) & (o == 1),  # connection (pass-through)
-            (i > 0) & (o > 0),  # junction
+            (d == 1) & (i == 0) & (o > 0),  # pure directed terminal source
+            (d == 1) & (o == 0) & (i > 0),  # pure directed terminal sink
+            (d == 1),  # terminal (incl. bidir)
+            (d == 2),  # connection (pass-through), regardless of i/o
+            (d >= 3),  # junction
         ],
         ["source", "sink", "terminal", "connection", "junction"],
         default="__error__",
@@ -549,7 +549,7 @@ def plot(
         categorical=True,
         markersize=3,
         lw=0.5,
-        legend=True
+        legend=True,
     )
     _plots.style_map_plot(ax_bl, title, xlim, ylim)
 

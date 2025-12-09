@@ -105,7 +105,7 @@ class NodeSchema(pa.DataFrameModel):
 
     @pa.check("geometry")
     def check_geometries(cls, geom):
-        """Ensure geometries are always simple lines."""
+        """Ensure geometries are always simple points."""
         return not {"Point"} ^ set(geom.geom_type.unique())
 
 
