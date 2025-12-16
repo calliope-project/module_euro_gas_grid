@@ -1,9 +1,7 @@
-from __future__ import annotations
-
-import geopandas as gpd
-from shapely.geometry import LineString, Point
 
 import _line_splitter
+import geopandas as gpd
+from shapely.geometry import LineString, Point
 
 
 def split_pipeline_network_on_shapes(
@@ -15,8 +13,7 @@ def split_pipeline_network_on_shapes(
     snap_tol_m: float = 1.0,
     min_segment_len_m: float = 0.0,
 ) -> tuple[gpd.GeoDataFrame, gpd.GeoDataFrame]:
-    """
-    Split pipelines at shape boundaries.
+    """Split pipelines at shape boundaries.
 
     Returns:
       - pipelines_split: segmented pipelines with rewired start/end node ids and debug flags

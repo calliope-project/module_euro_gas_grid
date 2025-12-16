@@ -84,7 +84,7 @@ class PipelineSchema(pa.DataFrameModel):
 class NodeSchema(pa.DataFrameModel):
     class Config:
         coerce = True
-        strict = True
+        strict = "filter"
 
     node_id: Series[int] = pa.Field(unique=True)
     "Individual node ID."
