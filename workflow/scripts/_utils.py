@@ -16,7 +16,7 @@ def check_projected_crs(crs) -> None:
 
 # TODO: improve connection/juntion logic
 # connections with two bi-lateral lines are labeled as junctions
-def compute_node_attributes(
+def compute_node_graph_attributes(
     pipes: gpd.GeoDataFrame, nodes: gpd.GeoDataFrame
 ) -> gpd.GeoDataFrame:
     """Identify graph charactersitics (both directed and undirected) per node."""

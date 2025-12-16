@@ -22,12 +22,26 @@ from shapely.ops import substring, unary_union
 
 @dataclass(frozen=True)
 class BoundaryPoint:
-    """A boundary crossing located along the original line."""
+    """A point located at a boundary crossing measure along a line."""
 
     measure: float
     "Distance along the line (in the line's CRS units, typically meters)."
     point: Point
+    "Shapely geometry."
 
+
+@dataclass(frozen=True)
+class InteriorPoint(BoundaryPoint):
+    """A representative joint strictly between two boundary crossings.
+
+    These are derived from consecutive boundary crossings and are meant to avoid
+    ambiguity compared to using points that lie exactly on the boundary.
+    """
+
+    start: float
+    "Boundary crossing measure for the previous crossing."
+    end: float
+    "Boundary crossing measure for the next crossing."
 
 @dataclass(frozen=True)
 class Segment:
@@ -38,23 +52,6 @@ class Segment:
     end: float
     "Distance of the original geometry where this segment ends."
     geometry: LineString
-
-
-@dataclass(frozen=True)
-class InteriorPoint:
-    """A representative point strictly between two boundary crossings.
-
-    These are derived from consecutive boundary crossings and are meant to avoid
-    ambiguity compared to using points that lie exactly on the boundary.
-    """
-
-    start: float
-    "Boundary crossing measure for the previous crossing."
-    end: float
-    "Boundary crossing measure for the next crossing."
-    measure: float
-    "Location of the interior point within start / end."
-    point: Point
 
 
 def _extract_intersection_points_and_overlap_lines(
@@ -118,30 +115,81 @@ def _intervals_overlap(
     return (hi - lo) > tol_m
 
 
-def _filter_points_min_segment(
-    points, *, line_length_m: float, min_segment_len_m: float
-):
-    """Drop points so that all resulting segments are >= min length.
+def _sorted_by_measure[T: BoundaryPoint](points: list[T]) -> list[T]:
+    return sorted(points, key=lambda p: p.measure)
 
-    This filters 'cut' marks.
-    Endpoints (0 and line_length_m) are still used when cutting.
+
+def _keep_by_measure[T: BoundaryPoint](
+    points_sorted: list[T], keep_measures: set[float]
+) -> list[T]:
+    return [p for p in points_sorted if p.measure in keep_measures]
+
+
+def _filter_points_min_length[T: BoundaryPoint](
+    points: list[T], *, line_length_m: float, min_segment_len_m: float
+) -> list[T]:
+    """Keep marks of least min_segment_len_m apart along the line.
+
+    This does NOT guarantee that no short segment remains.
     """
     if min_segment_len_m <= 0 or not points:
         return points
 
-    pts = sorted(points, key=lambda p: p.measure)
-    kept = []
+    pts = _sorted_by_measure(points)
+    kept: list[float] = []
     last = 0.0
 
     for p in pts:
         if (p.measure - last) >= min_segment_len_m:
-            kept.append(p)
+            kept.append(p.measure)
             last = p.measure
 
-    while kept and (line_length_m - kept[-1].measure) < min_segment_len_m:
+    # Ensure the tail segment is long enough
+    while kept and (line_length_m - kept[-1]) < min_segment_len_m:
         kept.pop()
 
-    return kept
+    return _keep_by_measure(pts, set(kept))
+
+
+def _filter_points_drop_short_segments[T: BoundaryPoint](
+    boundary_points: list[T],
+    *,
+    line_length_m: float,
+    min_segment_len_m: float,
+) -> list[T]:
+    """Ensure that cutting boundaries produces no short segment.
+
+    This is boundary-specific: boundary crossings often come in close enter/exit pairs
+    around narrow features (rivers). If a short segment would be created between two
+    boundary marks, this removes BOTH marks (merging that narrow feature away).
+    """
+    if min_segment_len_m <= 0 or not boundary_points:
+        return boundary_points
+
+    pts = _sorted_by_measure(boundary_points)
+    measures = [p.measure for p in pts]
+
+    while measures:
+        marks = [0.0] + measures + [line_length_m]
+        seglens = [marks[i + 1] - marks[i] for i in range(len(marks) - 1)]
+
+        idx = next((i for i, d in enumerate(seglens) if d < min_segment_len_m), None)
+        if idx is None:
+            break
+
+        if idx == 0:
+            # Short segment at the start: drop the first mark
+            measures.pop(0)
+        elif idx == len(seglens) - 1:
+            # Short segment at the end: drop the last mark
+            measures.pop(-1)
+        else:
+            # Short internal segment between measures[idx-1] and measures[idx]:
+            # drop BOTH bounding marks
+            measures.pop(idx)  # right bound first
+            measures.pop(idx - 1)  # then left bound
+
+    return _keep_by_measure(pts, set(measures))
 
 
 def _find_boundary_points_and_overlaps(
@@ -190,10 +238,7 @@ def _find_boundary_points_and_overlaps(
     measures: list[float] = []
     for p in intersection_points:
         m = float(line.project(p))
-        if (
-            m <= endpoint_exclusion_m
-            or (line_length_m - m) <= endpoint_exclusion_m
-        ):
+        if m <= endpoint_exclusion_m or (line_length_m - m) <= endpoint_exclusion_m:
             continue
         measures.append(m)
 
@@ -342,13 +387,10 @@ def cut_line_by_boundary_points(
           as measures along the original line plus the corresponding on-line Point.
     """
     boundary_points, _ = _find_boundary_points_and_overlaps(
-        line,
-        boundary,
-        snap_tol_m=snap_tol_m,
-        endpoint_exclusion_m=endpoint_exclusion_m,
+        line, boundary, snap_tol_m=snap_tol_m, endpoint_exclusion_m=endpoint_exclusion_m
     )
 
-    boundary_points = _filter_points_min_segment(
+    boundary_points = _filter_points_drop_short_segments(
         boundary_points,
         line_length_m=float(line.length),
         min_segment_len_m=min_segment_len_m,
@@ -408,13 +450,10 @@ def cut_line_by_interior_points(
           "on the boundary" points.
     """
     boundary_points, overlap_intervals = _find_boundary_points_and_overlaps(
-        line,
-        boundary,
-        snap_tol_m=snap_tol_m,
-        endpoint_exclusion_m=endpoint_exclusion_m,
+        line, boundary, snap_tol_m=snap_tol_m, endpoint_exclusion_m=endpoint_exclusion_m
     )
 
-    boundary_points = _filter_points_min_segment(
+    boundary_points = _filter_points_drop_short_segments(
         boundary_points,
         line_length_m=float(line.length),
         min_segment_len_m=min_segment_len_m,
@@ -424,7 +463,7 @@ def cut_line_by_interior_points(
         line, boundary_points, overlap_intervals, interior_ratio=interior_ratio
     )
 
-    interior_points = _filter_points_min_segment(
+    interior_points = _filter_points_min_length(
         interior_points,
         line_length_m=float(line.length),
         min_segment_len_m=min_segment_len_m,

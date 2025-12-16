@@ -1,6 +1,9 @@
+"""code to aggregate pipelines to shapes."""
 
 import _line_splitter
+import _utils
 import geopandas as gpd
+import pandas as pd
 from shapely.geometry import LineString, Point
 
 
@@ -50,11 +53,12 @@ def split_pipeline_network_on_shapes(
         if Point(line.coords[0]).distance(spt) > Point(line.coords[-1]).distance(spt):
             line = LineString(list(line.coords)[::-1])
 
-        segments, cuts = _line_splitter.cut_line_by_interior_points(
+        segments, cuts = _line_splitter.cut_line_by_boundary_points(
             line,
             boundary,
             snap_tol_m=snap_tol_m,
             min_segment_len_m=min_segment_len_m,
+            endpoint_exclusion_m=snap_tol_m
         )
 
         n_cuts = len(cuts)
@@ -105,6 +109,7 @@ def split_pipeline_network_on_shapes(
     pipelines_split = pipelines_split_m.to_crs(pipelines.crs)
 
     new_nodes_m = gpd.GeoDataFrame(new_nodes_rows_m, geometry="geometry", crs=metric_crs)
-    new_nodes = new_nodes_m.to_crs(nodes.crs)
+    new_nodes_m = _utils.compute_node_graph_attributes(pipelines_split, new_nodes_m)
+    nodes_split = pd.concat([nodes, new_nodes_m.to_crs(nodes.crs)], ignore_index=True)
 
-    return pipelines_split, new_nodes
+    return pipelines_split, nodes_split

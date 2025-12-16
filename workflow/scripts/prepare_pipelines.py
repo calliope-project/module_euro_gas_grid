@@ -526,7 +526,7 @@ def main():
     nodes = initialise_nodes(snakemake.input.raw_nodes, countries_file)
     pipes = initialise_pipelines(snakemake.input.raw_pipelines)
     pipes, nodes = match_pipes_to_nodes(pipes, nodes, crs=crs)
-    nodes = _utils.compute_node_attributes(pipes, nodes)
+    nodes = _utils.compute_node_graph_attributes(pipes, nodes)
     pipes = estimate_ch4_capacity(
         pipes,
         inferred_mm=smk_params["imputation"].get("inferred_mm", None),
