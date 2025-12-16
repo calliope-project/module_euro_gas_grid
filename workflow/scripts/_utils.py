@@ -1,4 +1,5 @@
 """General utility functions."""
+
 from collections.abc import Sequence
 
 import geopandas as gpd
@@ -9,7 +10,12 @@ from pyproj import CRS
 
 def to_crs(gdf: gpd.GeoDataFrame, crs: str) -> gpd.GeoDataFrame:
     """Quick CRS conversion."""
-    return gdf.to_crs(crs) if gdf.crs != crs else gdf
+    target = CRS.from_user_input(crs)
+    current = CRS.from_user_input(gdf.crs) if gdf.crs is not None else None
+    return (
+        gdf if (current is not None and current.equals(target)) else gdf.to_crs(target)
+    )
+
 
 def check_projected_crs(crs) -> None:
     if not CRS(crs).is_projected:
@@ -70,33 +76,33 @@ def match_lines_to_polygons(
     *,
     polygon_value_cols: str | Sequence[str] = "shape_id",
     threshold: float = 0.5,
-    candidate_predicate: str = "intersects",
+    predicate: str = "intersects",
     keep: str = "max_share",  # "max_share" | "first"
-) -> gpd.GeoDataFrame:
-    """Attach polygon attributes to each line if enough of the line lies within the polygon.
+) -> pd.DataFrame:
+    """Match each line to polygon attributes if >= threshold of its length lies within a polygon.
 
     Uses a spatial join to generate candidate (line, polygon) pairs, then computes:
 
         share = length(line ∩ polygon) / length(line)
 
     and keeps matches where share >= threshold.
+    If multiple polygons qualify for a line, a single match is chosen via `keep`.
 
     Args:
         lines: GeoDataFrame of LineString geometries. Index must be unique.
         polygons: GeoDataFrame of polygon geometries.
-        polygon_value_cols: Column name(s) to match.
-        threshold: Minimum fraction of line length that must lie within a polygon
-            to be considered a match. Must be in [0, 1].
-        candidate_predicate: Predicate for the initial candidate search (spatial index),
+        polygon_value_cols: Column name(s) from `polygons` to return.
+        threshold: Minimum fraction of line length that must lie within a polygon.
+            Must be in [0, 1].
+        predicate: Predicate for the initial candidate search (spatial index),
             usually "intersects".
         keep: How to resolve multiple qualifying polygons for the same line:
             - "max_share": choose the polygon with the largest covered share (default)
             - "first": choose the first qualifying polygon encountered
-        include_share: If True, include the computed share as an extra column `_share`.
 
     Returns:
-        GeoDataFrame: Copy of `lines` with the requested polygon column(s) attached.
-        Non-matching lines receive NaN values in those columns. Geometry/index match `lines`.
+        DataFrame with index matching `lines.index` and columns `polygon_value_cols`.
+        Non-matching lines receive NA values.
     """
     if not (0.0 <= threshold <= 1.0):
         raise ValueError("threshold must be in [0, 1].")
@@ -107,30 +113,29 @@ def match_lines_to_polygons(
     if lines.crs is None or lines.crs != polygons.crs or not lines.crs.is_projected:
         raise ValueError("An input has an invalid CRS.")
 
-    poly_cols = [polygon_value_cols] if isinstance(polygon_value_cols, str) else list(polygon_value_cols)
+    poly_cols = (
+        [polygon_value_cols]
+        if isinstance(polygon_value_cols, str)
+        else list(polygon_value_cols)
+    )
 
-    out = lines.copy()
-    for c in poly_cols:
-        out[c] = pd.NA
+    # output: only requested columns, indexed like lines
+    out = pd.DataFrame({c: pd.NA for c in poly_cols}, index=lines.index)
 
-    # candidates via spatial index
     cand = gpd.sjoin(
         lines[["geometry"]],
         polygons[poly_cols + ["geometry"]],
         how="inner",
-        predicate=candidate_predicate,
+        predicate=predicate,
     )
     if cand.empty:
         return out
 
-    # polygon geometry for intersection
     cand = cand.join(polygons.geometry.rename("_poly_geom"), on="index_right")
 
     line_len = lines.geometry.length.reindex(cand.index).to_numpy()
     inter_len = cand.geometry.intersection(cand["_poly_geom"]).length.to_numpy()
-
-    share = np.where(line_len > 0, inter_len / line_len, 0.0)
-    cand["_share"] = share
+    cand["_share"] = np.where(line_len > 0, inter_len / line_len, 0.0)
 
     cand = cand[cand["_share"] >= threshold]
     if cand.empty:
@@ -144,5 +149,4 @@ def match_lines_to_polygons(
         raise ValueError("keep must be 'max_share' or 'first'.")
 
     out.loc[best.index, poly_cols] = best[poly_cols].to_numpy()
-
     return out

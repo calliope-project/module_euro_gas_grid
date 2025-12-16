@@ -72,6 +72,10 @@ class PipelineSchema(pa.DataFrameModel):
     "Method used to calculate CH4 capacity."
     is_offshore: Series[bool]
     "Flag offshore pipelines (outside of country landmass)."
+    shape_id: Series[str] | None = pa.Field(nullable=True)
+    "Shape ID a pipeline corresponds to."
+    country_id: Series[str] | None = pa.Field(str_length=3, nullable=True)
+    "Fallback country ID, used for pipelines 'outside' the given shapefile."
     geometry: GeoSeries
     "Must be lines."
 
@@ -98,7 +102,7 @@ class NodeSchema(pa.DataFrameModel):
         isin=["source", "sink", "terminal", "connection", "junction"]
     )
     """Type of element."""
-    country_id: Series[str] = pa.Field(str_length=3)
+    country_id: Series[str] | None = pa.Field(str_length=3, nullable=True)
     "Country identifier (ISO3 in most cases)."
     geometry: GeoSeries
     "Must be points."

@@ -15,6 +15,8 @@ def split_pipeline_network_on_shapes(
     metric_crs: int = 3035,
     snap_tol_m: float = 1.0,
     min_segment_len_m: float = 0.0,
+    next_pipe_id: int | None = None,
+    next_node_id: int | None = None,
 ) -> tuple[gpd.GeoDataFrame, gpd.GeoDataFrame]:
     """Split pipelines at shape boundaries.
 
@@ -32,11 +34,13 @@ def split_pipeline_network_on_shapes(
     nodes_m = nodes.to_crs(metric_crs)
     shapes_m = shapes.to_crs(metric_crs)
 
+    if next_pipe_id is None:
+        next_pipe_id = int(pipelines["pipeline_id"].max()) + 1
+    if next_node_id is None:
+        next_node_id = int(nodes["node_id"].max()) + 1
+
     boundary = _line_splitter.build_boundary(shapes_m.geometry)
     node_geom_m = nodes_m.set_index("node_id")["geometry"].to_dict()
-
-    next_pipe_id = int(pipelines["pipeline_id"].max()) + 1
-    next_node_id = int(nodes["node_id"].max()) + 1
 
     seg_rows: list[dict] = []
     new_nodes_rows_m: list[dict] = []
@@ -58,7 +62,7 @@ def split_pipeline_network_on_shapes(
             boundary,
             snap_tol_m=snap_tol_m,
             min_segment_len_m=min_segment_len_m,
-            endpoint_exclusion_m=snap_tol_m
+            endpoint_exclusion_m=snap_tol_m,
         )
 
         n_cuts = len(cuts)
@@ -108,7 +112,9 @@ def split_pipeline_network_on_shapes(
     pipelines_split_m = gpd.GeoDataFrame(seg_rows, geometry="geometry", crs=metric_crs)
     pipelines_split = pipelines_split_m.to_crs(pipelines.crs)
 
-    new_nodes_m = gpd.GeoDataFrame(new_nodes_rows_m, geometry="geometry", crs=metric_crs)
+    new_nodes_m = gpd.GeoDataFrame(
+        new_nodes_rows_m, geometry="geometry", crs=metric_crs
+    )
     new_nodes_m = _utils.compute_node_graph_attributes(pipelines_split, new_nodes_m)
     nodes_split = pd.concat([nodes, new_nodes_m.to_crs(nodes.crs)], ignore_index=True)
 

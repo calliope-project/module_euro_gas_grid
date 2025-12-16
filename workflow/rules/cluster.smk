@@ -48,3 +48,23 @@
 #         "../envs/euro_gas_grid.yaml"
 #     script:
 #         "../scripts/cluster_and_snap_pipelines.py"
+
+rule cluster_gas_network:
+    message: "Clustering and sectioning existing gas grid to {wildcards.shapes}."
+    params:
+        projected_crs = config["crs"]["projected"],
+        min_segment_length = config["clustering"]["min_segment_length"]
+
+    input:
+        countries = rules.prepare_countries.output.countries,
+        pipelines = rules.prepare_pipelines.output.pipelines,
+        nodes = rules.prepare_pipelines.output.nodes,
+        shapes = "resources/user/{shapes}/shapes.parquet",
+    output:
+        pipelines = "results/{shapes}/pipelines.parquet",
+        nodes = "results/{shapes}/nodes.parquet",
+        fig = "results/{shapes}/pipelines.png"
+    log:
+        "logs/{shapes}/cluster_gas_network.log"
+    conda: "../envs/euro_gas_grid.yaml"
+    script: "../scripts/cluster_gas_network.py"

@@ -6,6 +6,9 @@ crs:
 
 add_north_sea: True
 
+clustering:
+  min_segment_length: 500
+
 imputation:
   remove_nordstream: True
   buffer_distance: 100
