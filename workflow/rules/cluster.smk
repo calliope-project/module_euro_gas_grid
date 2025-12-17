@@ -53,13 +53,13 @@ rule cluster_gas_network:
     message: "Clustering and sectioning existing gas grid to {wildcards.shapes}."
     params:
         projected_crs = config["crs"]["projected"],
-        min_segment_length = config["clustering"]["min_segment_length"]
-
+        min_segment_length = config["clustering"]["min_segment_length"],
+        replace_sovereign = config["clustering"].get("replace_sovereign", {})
     input:
         countries = rules.prepare_countries.output.countries,
         pipelines = rules.prepare_pipelines.output.pipelines,
         nodes = rules.prepare_pipelines.output.nodes,
-        shapes = rules.prepare_shapes.output.shapes,
+        shapes = "resources/user/{shapes}/shapes.parquet",
     output:
         pipelines = "results/{shapes}/pipelines.parquet",
         nodes = "results/{shapes}/nodes.parquet",

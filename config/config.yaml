@@ -7,7 +7,12 @@ crs:
 add_north_sea: True
 
 clustering:
-  min_segment_length: 500
+  min_segment_length: 10000  # matches projected CRS unit (m)
+  replace_sovereign:
+    NL1: NLD
+    FI1: FIN
+    GB1: GBR
+
 
 imputation:
   remove_nordstream: True

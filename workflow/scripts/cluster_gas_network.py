@@ -2,7 +2,7 @@
 
 Steps:
 1. Split pipelines to ensure a node is located at boundary crossings.
-2. Assigns a `shape_id` to each edge (pipeline) if >50% of its length is within it.
+2. Assign a `shape_id` to each edge (pipeline) if >50% of its length is within it.
 3. As a fallback, a `country_id` is assigned to lines outside shapes.
 4. For the rest, it is assumed to be an offshore pipeline.
 
@@ -178,9 +178,9 @@ def main():
     """Main clustering process."""
     proj_crs = snakemake.params.projected_crs
     min_segment_length = snakemake.params.min_segment_length
+    shapes_input = snakemake.input.shapes
 
     # read + validate
-    shapes_input = snakemake.input.shapes
     shapes = _schemas.ShapesSchema.validate(gpd.read_parquet(shapes_input))
     countries = _schemas.CountriesSchema.validate(
         gpd.read_parquet(snakemake.input.countries)
@@ -211,11 +211,16 @@ def main():
             pipes, shapes, polygon_value_cols=["shape_id", "country_id"]
         )
     )
-    missing_country = pipes["country_id"].isna()
-    if missing_country.any():
-        pipes.loc[missing_country, "country_id"] = _utils.match_lines_to_polygons(
-            pipes.loc[missing_country], countries, polygon_value_cols=["sovereign_id"]
-        )["sovereign_id"]
+    mask = pipes["country_id"].isna()
+    if mask.any():
+        # Assign country_id to countries outside of shapes
+        missing = _utils.match_lines_to_polygons(
+            pipes.loc[mask], countries, polygon_value_cols=["sovereign_id"]
+        )
+        replace_sovereign = snakemake.params.replace_sovereign
+        if replace_sovereign:
+            missing["sovereign_id"] = missing["sovereign_id"].replace(replace_sovereign)
+        pipes.loc[mask, "country_id"] = missing["sovereign_id"]
 
     # reproject for output + save + plot
     pipes_out = _utils.to_crs(pipes, out_crs)
