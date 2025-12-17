@@ -8,7 +8,7 @@ add_north_sea: True
 
 clustering:
   method: "node-relevance"  # options: node-relevance, max-transfer
-  min_segment_length: 10000  # matches projected CRS unit (m)
+  min_segment_length: 1000  # matches projected CRS unit (m)
   replace_sovereign:
     NL1: NLD
     FI1: FIN
@@ -23,10 +23,3 @@ imputation:
   recalculate_below_mw: 500
   ch4_to_h2_ratio: 0.8
   length_factor: 1.25
-
-plots:
-  facecolor: 'white'
-  edgecolor: "#c2c2c0"
-  linewidth: 0.5
-  cmap: winter_r
-

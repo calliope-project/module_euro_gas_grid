@@ -8,7 +8,7 @@ import _utils
 import geopandas as gpd
 import networkx as nx
 import pandas as pd
-from shapely.geometry import Point
+from shapely.geometry import LineString, Point
 
 
 @dataclass(frozen=True, order=True)
@@ -318,3 +318,23 @@ def estimate_trade(
         ).reset_index(drop=True)
 
     return trade_shapes, trade_external
+
+
+def trade_to_centroid_lines(
+    trade_shapes: pd.DataFrame,
+    shapes: gpd.GeoDataFrame,
+    *,
+    shape_id_col: str = "shape_id",
+) -> gpd.GeoDataFrame:
+    """Build a GeoDataFrame of LineStrings between shape centroids, carrying trade capacities."""
+    # Map shape_id -> centroid point
+    shape_geom = shapes.set_index(shape_id_col)["geometry"]
+    centroids = shape_geom.centroid
+
+    a_pts = trade_shapes["shape_id_a"].map(centroids)
+    b_pts = trade_shapes["shape_id_b"].map(centroids)
+
+    lines = [LineString([a, b]) for a, b in zip(a_pts, b_pts)]
+
+    out = trade_shapes.copy()
+    return gpd.GeoDataFrame(out, geometry=lines, crs=shapes.crs)

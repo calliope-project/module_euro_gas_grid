@@ -1,5 +1,6 @@
 """Rules to standardise files."""
 
+# TODO: remove north sea shape
 rule prepare_shapes:
     message:
         "Preparing shapes for the Euro Gas Grid module."
