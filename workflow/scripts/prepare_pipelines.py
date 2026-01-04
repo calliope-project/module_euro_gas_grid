@@ -166,12 +166,12 @@ def match_pipes_to_nodes(
     # Drop: any pipeline with an unmatched endpoint
     unmatched = matched["node_id"].isna()
     if unmatched.any():
-        bad_pipe_ids |= matched.loc[unmatched, "pipeline_id"].unique().tolist()
+        bad_pipe_ids.update(matched.loc[unmatched, "pipeline_id"].unique())
 
     # Drop: any pipeline endpoint with multiple nearest matches (ties)
     multi = matched.duplicated(subset=["pipeline_id", "endpoint"], keep=False)
     if multi.any():
-        bad_pipe_ids |= matched.loc[multi, "pipeline_id"].unique().tolist()
+        bad_pipe_ids.update(matched.loc[multi, "pipeline_id"].unique())
 
     if bad_pipe_ids:
         pipes = pipes.loc[~pipes["pipeline_id"].isin(bad_pipe_ids)]
@@ -280,7 +280,7 @@ def estimate_ch4_capacity(
     inferred_mm: float | None = None,
     *,
     recalculate_below_mw: float | None = None,
-    capacity_correction_threshold: float = 8,
+    capacity_correction_threshold: float = 6,
     excluded_pipeline_ids: list[int] | None = None,
     bidirectional_below_km: float = 10.0,
 ) -> gpd.GeoDataFrame:

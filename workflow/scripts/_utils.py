@@ -71,8 +71,8 @@ def compute_node_graph_attributes(
 def match_points_to_polygons(
     points: gpd.GeoDataFrame,
     polygons: gpd.GeoDataFrame,
+    columns: str | Sequence[str],
     *,
-    polygon_columns: str | Sequence[str] = "shape_id",
     predicate: str = "intersects",
 ) -> pd.DataFrame:
     """Match each point to polygon attributes, resolving overlaps by smallest polygon area.
@@ -84,7 +84,7 @@ def match_points_to_polygons(
     Args:
         points: GeoDataFrame of Point geometries. Index must be unique.
         polygons: GeoDataFrame of polygon geometries.
-        polygon_columns: Column name(s) from `polygons` to return.
+        columns: Column name(s) from `polygons` to match.
         predicate: Spatial predicate for matching:
             - "intersects": includes points on polygon boundaries
             - "within": point strictly inside polygon (boundary -> no match)
@@ -100,7 +100,7 @@ def match_points_to_polygons(
         raise ValueError("points and polygons must share a CRS.")
 
     poly_cols = (
-        [polygon_columns] if isinstance(polygon_columns, str) else list(polygon_columns)
+        [columns] if isinstance(columns, str) else list(columns)
     )
 
     output = pd.DataFrame({c: pd.NA for c in poly_cols}, index=points.index)

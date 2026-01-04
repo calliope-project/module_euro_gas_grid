@@ -7,8 +7,6 @@ crs:
 add_north_sea: True
 
 clustering:
-  method: "node-relevance"  # options: node-relevance, max-transfer
-  min_segment_length: 1000  # matches projected CRS unit (m)
   replace_sovereign:
     NL1: NLD
     FI1: FIN
