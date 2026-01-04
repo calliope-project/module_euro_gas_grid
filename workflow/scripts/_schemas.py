@@ -57,7 +57,6 @@ class PipelineSchema(pa.DataFrameModel):
     "Pipeline diameter."
     diameter_method: Series[str]
     "Diameter estimation metadata."
-    # TODO: remove, could be misleading.
     max_cap_M_m3_per_d: Series[float] = pa.Field(gt=0)
     "Max capacity estimate."
     max_cap_method: Series[str]

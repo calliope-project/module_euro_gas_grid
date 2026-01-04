@@ -19,9 +19,8 @@ rule cluster_gas_network:
         projected_crs = config["crs"]["projected"],
         replace_sovereign = config["clustering"].get("replace_sovereign", {})
     input:
-        countries = rules.prepare_countries.output.countries,
         pipelines = rules.prepare_pipelines.output.pipelines,
-        # nodes = rules.prepare_pipelines.output.nodes,
+        nodes = rules.prepare_pipelines.output.nodes,
         shapes = "resources/user/{shapes}/shapes.parquet",
     output:
         hubs = "results/{shapes}/hubs.parquet",

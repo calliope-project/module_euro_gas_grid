@@ -195,18 +195,6 @@ def max_transfer_sets(G: nx.DiGraph, sources: set[int], sinks: set[int]) -> floa
     return max_transfer(H, source, sink)
 
 
-def construct_nodes(
-    pipelines: gpd.GeoDataFrame, shapes: gpd.GeoDataFrame, countries: gpd.GeoDataFrame
-):
-    """Construct nodes identifying those within shapes and countries."""
-    nodes = _utils.build_nodes_from_pipelines(pipelines)
-    nodes = nodes.join(_utils.match_points_to_polygons(nodes, shapes, "shape_id"))
-    nodes = nodes.join(
-        _utils.match_points_to_polygons(nodes, countries, "sovereign_id")
-    )
-    return nodes
-
-
 def build_trade_network_with_hubs(
     nodes: gpd.GeoDataFrame, pipelines: pd.DataFrame, shapes: gpd.GeoDataFrame
 ) -> tuple[gpd.GeoDataFrame, gpd.GeoDataFrame, gpd.GeoDataFrame, pd.DataFrame]:
@@ -535,13 +523,13 @@ def main():
     _utils.check_projected_crs(proj_crs)
 
     # Prepare inputs
-    countries = _utils.to_crs(gpd.read_parquet(snakemake.input.countries), proj_crs)
+    nodes = _utils.to_crs(gpd.read_parquet(snakemake.input.nodes), proj_crs)
     pipelines = _utils.to_crs(gpd.read_parquet(snakemake.input.pipelines), proj_crs)
     shapes = _utils.to_crs(gpd.read_parquet(snakemake.input.shapes), proj_crs)
     shapes = _schemas.ShapesSchema.validate(shapes)
 
-    # Build nodes dataset
-    nodes = construct_nodes(pipelines, shapes, countries)
+    # Prepare nodes dataset
+    nodes = nodes.join(_utils.match_points_to_polygons(nodes, shapes, "shape_id"))
     replace_sovereign = snakemake.params.replace_sovereign
     if replace_sovereign:  # Swap sovereign IDs if requested
         nodes["sovereign_id"] = nodes["sovereign_id"].replace(replace_sovereign)

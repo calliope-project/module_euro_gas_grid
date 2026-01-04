@@ -51,29 +51,3 @@ rule download_natural_earth:
         "../envs/shell.yaml"
     shell:
         """curl -sSLo {output} {params.url}"""
-
-
-rule download_north_sea:
-    message:
-        "Downloading North Sea map from the marine regions database."
-    params:
-        url = internal["resources"]["automatic"]["marine_regions"]
-    log:
-        "logs/automatic/download_north_sea.log"
-    output:
-        zipfile="resources/automatic/north_sea_2350.zip",
-    localrule: True,
-    conda:
-        "../envs/shell.yaml"
-    shell:
-        """
-        curl -sSL -G {params.url:q} \
-        --data-urlencode 'service=WFS' \
-        --data-urlencode 'version=2.0.0' \
-        --data-urlencode 'request=GetFeature' \
-        --data-urlencode 'typeNames=iho' \
-        --data-urlencode 'cql_filter=mrgid=2350' \
-        --data-urlencode 'outputFormat=SHAPE-ZIP' \
-        -o {output:q}
-        """
-
