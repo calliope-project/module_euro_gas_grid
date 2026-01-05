@@ -109,14 +109,10 @@ class ShapesSchema(pa.DataFrameModel):
     "A unique identifier for this shape."
     country_id: Series[str]
     "Country ISO alpha-3 code."
-    shape_class: Series[str] = pa.Field(isin=["land"])
+    shape_class: Series[str] = pa.Field(isin=["land", "maritime"])
     "Identifier of the shape's context."
     geometry: GeoSeries
     "Shape (multi)polygon."
-
-    @pa.dataframe_parser
-    def keep_land(cls, df):
-        return df.loc[df["shape_class"] == "land"].copy()
 
     @pa.dataframe_parser
     def fix_geometries(cls, df):

@@ -93,6 +93,7 @@ def plot(
         cmap=cmap.Colormap(colormap).to_mpl(),
         legend=True,
         linewidth=0,
+        missing_kwds={"color": "lightgrey"}
     )
     gdf.boundary.plot(ax=ax, color="black", lw=0.5)
     _plots.style_map_plot(ax, "Salt cavern H2 potential ($GWh$)")

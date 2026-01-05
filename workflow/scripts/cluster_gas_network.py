@@ -528,6 +528,7 @@ def main():
     pipelines = _utils.to_crs(gpd.read_parquet(snakemake.input.pipelines), proj_crs)
     shapes = _utils.to_crs(gpd.read_parquet(snakemake.input.shapes), proj_crs)
     shapes = _schemas.ShapesSchema.validate(shapes)
+    shapes = shapes[shapes["shape_class"] == "land"]  # only land clustering is supported
 
     # Prepare nodes dataset
     nodes = nodes.join(_utils.match_points_to_polygons(nodes, shapes, "shape_id"))
