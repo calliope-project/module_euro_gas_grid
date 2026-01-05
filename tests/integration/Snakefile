@@ -1,21 +1,6 @@
 # Emulate a user configuring the module.
 configfile: workflow.source_path("./test_config.yaml")
 
-# Emulate how another workflow might create inputs for this module.
-rule create_external_input:
-    message: "Example of a rule external to your module."
-    output:
-        text_file = "results/integration_test/resources/user/user_message.md"
-    run:
-        from pathlib import Path
-        from textwrap import dedent
-        text = dedent("""Modular workflows can be used by more than one project!
-            For example, this text comes from a file external to the module.
-            Try your best to make this workflow reusable so that others may benefit from your methods."""
-        )
-        file_path = Path(output.text_file)
-        with file_path.open("w") as f:
-            f.write(text)
 
 # Import the module and configure it.
 # `snakefile:` specifies the module. It can use file paths and special github(...) / gitlab(...) markers
@@ -28,9 +13,22 @@ module module_euro_gas_grid:
 # rename all module rules with a prefix, to avoid naming conflicts.
 use rule * from module_euro_gas_grid as module_euro_gas_grid_*
 
+
+FILES = [
+    "hubs",
+    "nodes",
+    "pipelines",
+    "salt_cavern_h2_potential"
+]
+
+
 # Request something from the module
 rule all:
-    message: "A generic test case for your module."
+    message:
+        "A generic test case for your module."
     default_target: True
     input:
-        "results/integration_test/results/combined_text.md"
+        expand(
+            "results/integration_test/results/BALK/{file}.parquet",
+            file=FILES,
+        ),

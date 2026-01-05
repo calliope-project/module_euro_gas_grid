@@ -23,4 +23,4 @@ def user_path() -> Path:
         urlretrieve(TEST_FILES, test_zip)
         with zipfile.ZipFile(test_zip, "r") as zfile:
             zfile.extractall(dir)
-    return dir
+    return dir / "user"
