@@ -240,9 +240,9 @@ def estimate_capacity(
     inferred_mm: float | None = None,
     *,
     recalculate_below_mw: float | None = None,
-    capacity_correction_threshold: float = 6,
+    capacity_correction_threshold: float | None = None,
     excluded_pipeline_ids: list[int] | None = None,
-    bidirectional_below_distance: float = 10000.0,
+    bidirectional_below_distance: float | None = None,
 ) -> gpd.GeoDataFrame:
     """Estimate natural gas capacity for each pipeline segment.
 
@@ -278,27 +278,28 @@ def estimate_capacity(
         pipes.loc[inferred_mask, "diameter_mm"] = inferred_mm
         pipes.loc[inferred_mask, "diameter_method"] = "inferred"
 
-    # short lines are assumed to be bidirectional
-    length_km = pipes.geometry.length
-    short_lines = length_km < float(bidirectional_below_distance)
-    pipes.loc[short_lines, "is_bidirectional"] = True
+    # Optionally mark short lines as bidirectional
+    if bidirectional_below_distance is not None:
+        length = pipes.geometry.length
+        short_lines = length < float(bidirectional_below_distance)
+        pipes.loc[short_lines, "is_bidirectional"] = True
 
     # Optional exclusion list (configurable). NordStream can be added to it.
     exclude_ids: set[int] = set(excluded_pipeline_ids or [])
-
     if exclude_ids:
         pipes = pipes.loc[~pipes["pipeline_id"].isin(exclude_ids)]
 
     # cap_diam_mw should match the *current* pipes
     cap_diam_mw = pipes["diameter_mm"].apply(_diameter_to_capacity)
 
-    ratio = pipes["capacity_mw"] / cap_diam_mw
-    thr = capacity_correction_threshold
+    discrepant_mask = pd.Series(False, index=pipes.index)
+    if capacity_correction_threshold is not None:
+        ratio = pipes["capacity_mw"] / cap_diam_mw
+        thr = float(capacity_correction_threshold)
 
-    # exclude high pressure pipelines from ratio-based corrections
-    below_max_press = pipes["max_pressure_bar"] < 220
-
-    discrepant_mask = ((ratio > thr) | (ratio < 1 / thr)) & below_max_press
+        # exclude high pressure pipelines from ratio-based corrections
+        below_max_press = pipes["max_pressure_bar"] < 220
+        discrepant_mask = ((ratio > thr) | (ratio < 1 / thr)) & below_max_press
 
     # Optional: force recalculation below a threshold
     low_mask = pd.Series(False, index=pipes.index)
@@ -446,9 +447,9 @@ def main():
         pipes,
         inferred_mm=imputation.get("inferred_mm", None),
         recalculate_below_mw=imputation.get("recalculate_below_mw", None),
-        capacity_correction_threshold=imputation.get("capacity_correction_threshold", 6),
+        capacity_correction_threshold=imputation.get("capacity_correction_threshold", None),
         excluded_pipeline_ids=imputation.get("excluded_pipeline_ids", None),
-        bidirectional_below_distance=imputation.get("bidirectional_below_distance", 10000),
+        bidirectional_below_distance=imputation.get("bidirectional_below_distance", None),
     )
 
     # Validation

@@ -22,7 +22,7 @@ rule prepare_pipelines:
     message:
         "Harmonising SciGRID pipelines."
     params:
-        imputation=config["imputation"],
+        imputation=config.get("imputation", {}),
         projected_crs = config["crs"]["projected"],
     input:
         raw_pipelines="resources/automatic/scigrid_gas/PipeSegments.geojson",

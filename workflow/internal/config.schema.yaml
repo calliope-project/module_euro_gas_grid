@@ -2,7 +2,63 @@ $schema: "https://json-schema.org/draft/2020-12/schema"
 description: "Schema for user-provided configuration files."
 type: object
 additionalProperties: false
+required:
+  - crs
+  - clustering
 properties:
-  dummy_text:
-    description: A template example. Should be deleted in real applications.
-    type: string
+  crs:
+    type: object
+    additionalProperties: false
+    required: [projected]
+    properties:
+      projected:
+        oneOf:
+          - type: string
+            pattern: "^EPSG:.*$"
+          - type: integer
+
+  clustering:
+    type: object
+    additionalProperties: false
+    required: [pipelines, salt_caverns]
+    properties:
+      pipelines:
+        type: object
+        additionalProperties: false
+        properties:
+          replace_sovereign:
+            type: object
+            default: {}
+            additionalProperties:
+              type: string
+
+      salt_caverns:
+        type: object
+        additionalProperties: false
+        required: [min_gwh]
+        properties:
+          min_gwh:
+            type: number
+            minimum: 0
+
+  imputation:
+    type: object
+    additionalProperties: false
+    properties:
+      inferred_mm:
+        type: number
+        minimum: 0
+      recalculate_below_mw:
+        type: number
+        minimum: 0
+      capacity_correction_threshold:
+        type: number
+        minimum: 0
+      bidirectional_below_distance:
+        type: number
+        minimum: 0
+      excluded_pipeline_ids:
+        type: array
+        items:
+          type: integer
+
