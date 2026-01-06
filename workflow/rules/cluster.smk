@@ -13,7 +13,11 @@ rule cluster_gas_network:
         hubs = "results/{shapes}/hubs.parquet",
         pipelines = "results/{shapes}/pipelines.parquet",
         nodes = "results/{shapes}/nodes.parquet",
-        fig = "results/{shapes}/pipelines.png"
+        fig = report(
+            "results/{shapes}/pipelines.png",
+            caption="../report/cluster_gas_network.rst",
+            category="Euro gas grid module",
+        )
     log:
         "logs/{shapes}/cluster_gas_network.log"
     conda: "../envs/euro_gas_grid.yaml"
@@ -30,7 +34,11 @@ rule cluster_salt_cavern_h2_potential:
         shapes = "resources/user/{shapes}/shapes.parquet",
     output:
         salt_cavern_h2_potential = "results/{shapes}/salt_cavern_h2_potential.parquet",
-        fig = "results/{shapes}/salt_cavern_h2_potential.png"
+        fig = report(
+            "results/{shapes}/salt_cavern_h2_potential.png",
+            caption="../report/cluster_salt_cavern_h2_potential.rst",
+            category="Euro gas grid module",
+        )
     log:
         "logs/{shapes}/cluster_salt_cavern_h2_potential.log"
     conda: "../envs/euro_gas_grid.yaml"

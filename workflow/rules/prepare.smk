@@ -23,7 +23,7 @@ rule prepare_pipelines:
         "Harmonising SciGRID pipelines."
     params:
         imputation=config.get("imputation", {}),
-        projected_crs = config["crs"]["projected"],
+        projected_crs=config["crs"]["projected"],
     input:
         raw_pipelines="resources/automatic/scigrid_gas/PipeSegments.geojson",
         raw_nodes="resources/automatic/scigrid_gas/Nodes.geojson",
@@ -31,7 +31,11 @@ rule prepare_pipelines:
     output:
         pipelines="resources/automatic/pipelines.parquet",
         nodes="resources/automatic/nodes.parquet",
-        fig="resources/automatic/pipelines.png",
+        fig=report(
+            "resources/automatic/pipelines.png",
+            caption="../report/prepare_pipelines.rst",
+            category="Euro gas grid module",
+        ),
     log:
         "logs/prepare_pipelines.log",
     conda:

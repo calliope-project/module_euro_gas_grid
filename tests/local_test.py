@@ -41,12 +41,12 @@ def test_full_run(
         check=True,
         cwd=user_path.parent.parent,
     )
-    # assert subprocess.run(
-    #     f"snakemake --use-conda --cores 4 {request} --report results/{shape}/report.html",
-    #     shell=True,
-    #     check=True,
-    #     cwd=user_path.parent.parent,
-    # )
+    assert subprocess.run(
+        f"snakemake --use-conda --cores 4 {request} --report results/{shape}/report.html",
+        shell=True,
+        check=True,
+        cwd=user_path.parent.parent,
+    )
     assert subprocess.run(
         f"snakemake --use-conda --cores 4 {request} --rulegraph | dot -Tpng > results/{shape}/rulegraph.png",
         shell=True,
