@@ -1,20 +1,14 @@
 # Module Input-Output structure for automated doc. generation
 resources:
   user:
-    user_message.md: "Example file emulating external files requested from a user."
-  automatic:
-    dummy_readme.md: "Example file emulating downloads determined by internal settings."
+    "{shapes}/shapes.parquet": |
+      Region geometries in parquet format.
+      These should conform to the schema defined in https://github.com/calliope-project/module_geo_boundaries/.
 results:
-  combined_text.md: "Example file emulating module results."
+  "{shapes}/hubs.parquet": geoparquet describing hub node details and thresholds (Points).
+  "{shapes}/nodes.parquet": geoparquet describing aggregated nodes (Points).
+  "{shapes}/pipelines.parquet": geoparquet describing aggregated pipelines capacity (LineStrings).
+  "{shapes}/salt_cavern_h2_potential.parquet": parquet file describing aggregated salt cavern storage capacity.
 
-# Wildcard example:
-# resources:
-#   user:
-#     shapes_{resolution}.geojson: region geometries.
-#   automatic:
-#     technology_data.parquet: dataset with technology characteristics.
-# results:
-#   '{resolution}/tech_capacity.parquet': description of output data.
-#   '{resolution}/results_image.png': description of output image.
-# wildcards:
-#   resolution: description of the wildcard’s purpose.
+wildcards:
+  shapes: name of the provided shapefile case.
