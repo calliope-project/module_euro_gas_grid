@@ -46,7 +46,7 @@ rule unzip_scigrid_dataset:
     log:
         "logs/automatic/unzip_scigrid_dataset_{scigrid_gas}.log",
     conda:
-        "../envs/clustering.yaml"
+        "../envs/euro_gas_grid.yaml"
     script:
         "../scripts/unzip.py"
 
