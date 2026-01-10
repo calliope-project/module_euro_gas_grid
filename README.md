@@ -31,12 +31,6 @@ For testing, simply run:
 pixi run test-integration
 ```
 
-To view the documentation locally, use:
-
-```shell
-pixi run serve-docs
-```
-
 To test a minimal example of a workflow using this module:
 
 ```shell
