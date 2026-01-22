@@ -1,4 +1,5 @@
 $schema: "https://json-schema.org/draft/2020-12/schema"
+
 description: "Schema for user-provided configuration files."
 type: object
 additionalProperties: false
@@ -7,57 +8,86 @@ required:
   - clustering
 properties:
   crs:
+    description: CRS codes (e.g., 'epsg:3035', 'EPSG:4326', 8857).
     type: object
     additionalProperties: false
     required: [projected]
     properties:
       projected:
+        description: Projected CRS, for distance calculations ("EPSG:3035" is recommended).
         oneOf:
           - type: string
-            pattern: "^EPSG:.*$"
           - type: integer
 
   clustering:
+    description: Options to 'tweak' aggregation into the provided shapes.
     type: object
     additionalProperties: false
     required: [pipelines, salt_caverns]
     properties:
       pipelines:
+        description: Options affecting pipelines.
         type: object
         additionalProperties: false
         properties:
           replace_sovereign:
+            description: |
+              Replaces 'sovereign' ISO3 and ISO3-like codes for nations and independent provinces near,
+              but not within, the provided shapes.
+              For example, in a case where you have a shape_id NUTS0_DNK, and a dannish node slightly outside of it,
+              you can force this node to be 'absorbed' into the aggregated region by labeling it with a correspondent shape_id via
+                replace_sovereign: {DN1: DNK}
             type: object
             default: {}
             additionalProperties:
               type: string
 
       salt_caverns:
+        description: Options affecting salt cavern H2 storage.
         type: object
         additionalProperties: false
         required: [min_gwh]
         properties:
           min_gwh:
+            description: |
+              Minimum storage value to allow within an aggregated shape.
+              Values below it will be set to 0.
             type: number
             minimum: 0
 
   imputation:
+    description: Imputation options while processing the SciGrid-Gas dataset.
     type: object
     additionalProperties: false
     properties:
       inferred_mm:
+        description: |
+          Replaces 'Median' inferred diameter values in SciGrid.
+          Useful if you wish to be conservative about existing capacity.
         type: number
         minimum: 0
       recalculate_below_mw:
+        description: |
+          Estimated MW capacities below this will be re-calculated using a piecewise estimation
+          derived from the Hydrogen Backbone report.
         type: number
         minimum: 0
       capacity_correction_threshold:
+        description: |
+          If SciGrid-Gas derived capacities differ from the Hydrogen Backbone piecewise estimate by this threshold,
+          replace them with the Hydrogen Backbone estimate.
+          E.g.: if 6 is set, and the SciGrid-Gas value is 6 times above or below the piecewise value, replace.
         type: number
         minimum: 0
       bidirectional_below_distance:
+        description: |
+          Pipelines with a length below this will be assumed to be bidirectional.
         type: number
         minimum: 0
       excluded_pipeline_ids:
+        description: |
+          Each SciGrid-Gas pipeline is assigned an ID in a deterministic way.
+          Individual lines can be removed using this option. Useful to remove damaged or defunct lines.
         type: array
         items:
           type: integer
